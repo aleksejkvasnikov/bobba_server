@@ -1,5 +1,6 @@
 package io.bobba.poc.core.users;
 
+import io.bobba.poc.BobbaEnvironment;
 import io.bobba.poc.communication.outgoing.users.LoginOkComposer;
 import io.bobba.poc.communication.outgoing.users.UpdateCreditsBalanceComposer;
 import io.bobba.poc.core.gameclients.GameClient;
@@ -125,6 +126,7 @@ public class User {
 		if (disconnected)
 			return;
 		disconnected = true;
+		BobbaEnvironment.getGame().getUserManager().removeUser(this.id, this);
 		Logging.getInstance().writeLine(username + " has logged out", LogLevel.Verbose, this.getClass());
 		if (currentRoom != null) {
 			currentRoom.getRoomUserManager().removeUserFromRoom(this);

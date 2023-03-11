@@ -2,6 +2,7 @@ package io.bobba.poc.communication.protocol;
 
 public class ClientOpCodes {
     public final static int LOGIN = 1;
+    public final static int SIGNUP = 3;
     public final static int REQUEST_MAP = 2;
     public final static int REQUEST_MOVEMENT = 7;
     public final static int REQUEST_CHAT = 9;

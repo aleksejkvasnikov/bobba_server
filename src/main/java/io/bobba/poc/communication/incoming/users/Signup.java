@@ -5,13 +5,13 @@ import io.bobba.poc.communication.incoming.IIncomingEvent;
 import io.bobba.poc.communication.protocol.ClientMessage;
 import io.bobba.poc.core.gameclients.GameClient;
 
-public class Login implements IIncomingEvent {
+public class Signup implements IIncomingEvent {
 
     @Override
     public void handle(GameClient client, ClientMessage request) throws Exception {
         String username = request.popString();
         String look = request.popString();
         String password = request.popString();
-        BobbaEnvironment.getGame().getUserManager().tryLogin(client, username, look, password);
+        BobbaEnvironment.getGame().getUserManager().trySignup(client, username, look, password);
     }
 }
