@@ -1,7 +1,7 @@
 package io.bobba.poc.communication.protocol;
 
 public class ServerOpCodes {
-    public final static int DISPLAY_ERROR_MESSAGE = 3;
+    public final static int DISPLAY_ERROR_MESSAGE = 2;
     public final static int LOGIN_OK = 3;
     public final static int PLAYERS_DATA = 6;
     public final static int PLAYER_STATUS = 8;
