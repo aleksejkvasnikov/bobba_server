@@ -1,5 +1,7 @@
 package io.bobba.poc.core.users;
 
+import java.sql.SQLException;
+
 import io.bobba.poc.BobbaEnvironment;
 import io.bobba.poc.communication.outgoing.users.LoginOkComposer;
 import io.bobba.poc.communication.outgoing.users.UpdateCreditsBalanceComposer;
@@ -58,8 +60,9 @@ public class User {
 		return look;
 	}
 
-	public void setLook(String look) {
+	public void setLook(String look) throws SQLException {
 		this.look = look;
+		BobbaEnvironment.getGame().getUserManager().saveLookToDB(this.username, this.look);
 		notifyChange();
 	}
 
