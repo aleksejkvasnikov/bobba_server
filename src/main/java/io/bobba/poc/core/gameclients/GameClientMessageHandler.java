@@ -33,6 +33,7 @@ import io.bobba.poc.communication.incoming.rooms.RequestLookAt;
 import io.bobba.poc.communication.incoming.rooms.RequestMovement;
 import io.bobba.poc.communication.incoming.rooms.RequestWave;
 import io.bobba.poc.communication.incoming.users.Login;
+import io.bobba.poc.communication.incoming.users.Signup;
 import io.bobba.poc.communication.incoming.users.RequestGetInventory;
 import io.bobba.poc.communication.protocol.ClientMessage;
 import io.bobba.poc.communication.protocol.ClientOpCodes;
@@ -73,6 +74,7 @@ public class GameClientMessageHandler {
 	private void registerRequests() {
 		requestHandlers[ClientOpCodes.REQUEST_MAP] = new RequestHeightMap();
 		requestHandlers[ClientOpCodes.LOGIN] = new Login();
+		requestHandlers[ClientOpCodes.SIGNUP] = new Signup();
 		requestHandlers[ClientOpCodes.REQUEST_MOVEMENT] = new RequestMovement();
 		requestHandlers[ClientOpCodes.REQUEST_CHAT] = new RequestChat();
 		requestHandlers[ClientOpCodes.REQUEST_LOOK_AT] = new RequestLookAt();
