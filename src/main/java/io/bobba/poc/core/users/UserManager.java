@@ -4,13 +4,17 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
+
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.nio.charset.StandardCharsets;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 import io.bobba.poc.BobbaEnvironment;
+import io.bobba.poc.communication.outgoing.users.DisplayErrorMessageComposer;
 import io.bobba.poc.communication.outgoing.users.LoginOkComposer;
 import io.bobba.poc.communication.outgoing.users.UpdateCreditsBalanceComposer;
 import io.bobba.poc.core.gameclients.GameClient;
@@ -57,12 +61,16 @@ public class UserManager {
 		}
 		return false;
 	}
-	private boolean checkUserPassword(String username, String password) throws SQLException {
+	private boolean checkUserPassword(String username, String password) throws SQLException, NoSuchAlgorithmException {
+		// Hash the password using SHA-256
+		MessageDigest digest = MessageDigest.getInstance("SHA-256");
+		byte[] hashedPasswordBytes = digest.digest(password.getBytes(StandardCharsets.UTF_8));
+		String hashedPassword = bytesToHex(hashedPasswordBytes);
 		String sql = "SELECT COUNT(*) FROM users WHERE username = ? and password = ?";
 		try (Connection connection = BobbaEnvironment.getGame().getDatabase().getDataSource().getConnection();
 			 PreparedStatement statement = connection.prepareStatement(sql)) {
 			statement.setString(1, username);
-			statement.setString(2, password);
+			statement.setString(2, hashedPassword);
 			try (ResultSet resultSet = statement.executeQuery()) {
 				if (resultSet.next()) {
 					int count = resultSet.getInt(1);
@@ -75,9 +83,38 @@ public class UserManager {
 			throw e;
 		}
 	}
-	public void tryLogin(GameClient client, String username, String look, String password) throws SQLException{
+	private String loadLookFromDB(String username) throws SQLException {	
+		String sql = "SELECT look FROM users WHERE username = ?";
+		try (Connection connection = BobbaEnvironment.getGame().getDatabase().getDataSource().getConnection();
+			 PreparedStatement statement = connection.prepareStatement(sql)) {
+			statement.setString(1, username);
+			try (ResultSet resultSet = statement.executeQuery()) {
+				if (resultSet.next()) {
+					String result = resultSet.getString(1);
+					return result;
+				} else {
+					return "";
+				}
+			}
+		} catch (SQLException e) {
+			throw e;
+		}
+	}
+	public void saveLookToDB(String username, String look) throws SQLException {	
+		String sql = "UPDATE users SET look = ? WHERE username = ?";
+		try (Connection connection = BobbaEnvironment.getGame().getDatabase().getDataSource().getConnection();
+			 PreparedStatement statement = connection.prepareStatement(sql)) {
+			statement.setString(1, look);
+			statement.setString(2, username);
+			statement.executeUpdate();
+		} catch (SQLException e) {
+			throw e;
+		}
+	}
+	public void tryLogin(GameClient client, String username, String look, String password) throws SQLException, NoSuchAlgorithmException{
         if (client.getUser() == null && !isUserMapContainsUsername(username) && checkUserPassword(username, password)) {
-        	User user = addUser(username, look, client);
+        	look = loadLookFromDB(username);
+			User user = addUser(username, look, client);
             client.setUser(user);            
             Logging.getInstance().writeLine(client.getUser().getUsername() + " (" + client.getUser().getId() + ") has logged in!", LogLevel.Verbose, this.getClass());           
 
@@ -86,8 +123,9 @@ public class UserManager {
             
             addDummyFriends(user);
         } else {
-            Logging.getInstance().writeLine("Client already logged!", LogLevel.Warning, this.getClass());
-            client.stop();
+			client.sendMessage(new DisplayErrorMessageComposer("Login failed!"));
+            Logging.getInstance().writeLine("Login failed!", LogLevel.Warning, this.getClass());
+            //client.stop();
         }
     }
 	// already registered check
@@ -108,35 +146,51 @@ public class UserManager {
 			throw e;
 		}
 	}
-	private void saveUser(String username, String password) throws SQLException {
-		String sql = "INSERT INTO users (username, password) VALUES (?, ?)";
+	public void saveUser(String username, String password, String look) throws SQLException, NoSuchAlgorithmException {
+		// Hash the password using SHA-256
+		MessageDigest digest = MessageDigest.getInstance("SHA-256");
+		byte[] hashedPasswordBytes = digest.digest(password.getBytes(StandardCharsets.UTF_8));
+		String hashedPassword = bytesToHex(hashedPasswordBytes);
+		
+		String sql = "INSERT INTO users (username, password, look) VALUES (?, ?, ?)";
 		try (Connection connection = BobbaEnvironment.getGame().getDatabase().getDataSource().getConnection();
 			 PreparedStatement statement = connection.prepareStatement(sql)) {
 			statement.setString(1, username);
-			statement.setString(2, password);
+			statement.setString(2, hashedPassword);
+			statement.setString(3, look);
 			statement.executeUpdate();
 		} catch (SQLException e) {
 			throw e;
 		}
 	}
-	public void trySignup(GameClient client, String username, String look, String password) throws SQLException{
+	private String bytesToHex(byte[] bytes) {
+		StringBuilder hexString = new StringBuilder();
+		for (byte b : bytes) {
+			String hex = Integer.toHexString(0xff & b);
+			if (hex.length() == 1) hexString.append('0');
+			hexString.append(hex);
+		}
+		return hexString.toString();
+	}
+	public void trySignup(GameClient client, String username, String look, String password) throws SQLException, NoSuchAlgorithmException{
         if (client.getUser() == null && !isDbContainsUsername(username)) {
-        	saveUser(username, password);
-
+        	saveUser(username, password, look);
+			client.sendMessage(new DisplayErrorMessageComposer("Registration complete!"));
 			// remove later
-			User user = addUser(username, look, client);
-            client.setUser(user);  
+			//User user = addUser(username, look, client);
+            //client.setUser(user);  
 			//
 
             Logging.getInstance().writeLine(client.getUser().getUsername() + " (" + client.getUser().getId() + ") has created profile", LogLevel.Verbose, this.getClass());           
 			
 			// temp -> redo later
-            client.sendMessage(new LoginOkComposer(user.getId(), user.getUsername(), user.getLook(), user.getMotto()));
+            //client.sendMessage(new LoginOkComposer(user.getId(), user.getUsername(), user.getLook(), user.getMotto()));
             //client.sendMessage(...); something that displays "Registration complete" on react
 
         } else {
-            Logging.getInstance().writeLine("Username already existing!", LogLevel.Warning, this.getClass());
-            client.stop();
+			client.sendMessage(new DisplayErrorMessageComposer("Username already exists!"));
+            Logging.getInstance().writeLine("Username already exists!", LogLevel.Warning, this.getClass());
+            //client.stop();
         }
     }
 }

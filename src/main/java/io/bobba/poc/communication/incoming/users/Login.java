@@ -10,6 +10,7 @@ public class Login implements IIncomingEvent {
     @Override
     public void handle(GameClient client, ClientMessage request) throws Exception {
         String username = request.popString();
+        // remove look -> getting from db
         String look = request.popString();
         String password = request.popString();
         BobbaEnvironment.getGame().getUserManager().tryLogin(client, username, look, password);
