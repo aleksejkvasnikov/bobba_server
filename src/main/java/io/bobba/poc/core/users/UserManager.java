@@ -123,9 +123,9 @@ public class UserManager {
             
             addDummyFriends(user);
         } else {
-			client.sendMessage(new DisplayErrorMessageComposer("Client already logged!"));
-            Logging.getInstance().writeLine("Client already logged!", LogLevel.Warning, this.getClass());
-            client.stop();
+			client.sendMessage(new DisplayErrorMessageComposer("Login failed!"));
+            Logging.getInstance().writeLine("Login failed!", LogLevel.Warning, this.getClass());
+            //client.stop();
         }
     }
 	// already registered check
@@ -175,22 +175,22 @@ public class UserManager {
 	public void trySignup(GameClient client, String username, String look, String password) throws SQLException, NoSuchAlgorithmException{
         if (client.getUser() == null && !isDbContainsUsername(username)) {
         	saveUser(username, password, look);
-
+			client.sendMessage(new DisplayErrorMessageComposer("Registration complete!"));
 			// remove later
-			User user = addUser(username, look, client);
-            client.setUser(user);  
+			//User user = addUser(username, look, client);
+            //client.setUser(user);  
 			//
 
             Logging.getInstance().writeLine(client.getUser().getUsername() + " (" + client.getUser().getId() + ") has created profile", LogLevel.Verbose, this.getClass());           
 			
 			// temp -> redo later
-            client.sendMessage(new LoginOkComposer(user.getId(), user.getUsername(), user.getLook(), user.getMotto()));
+            //client.sendMessage(new LoginOkComposer(user.getId(), user.getUsername(), user.getLook(), user.getMotto()));
             //client.sendMessage(...); something that displays "Registration complete" on react
 
         } else {
 			client.sendMessage(new DisplayErrorMessageComposer("Username already exists!"));
             Logging.getInstance().writeLine("Username already exists!", LogLevel.Warning, this.getClass());
-            client.stop();
+            //client.stop();
         }
     }
 }
