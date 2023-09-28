@@ -1,13 +1,19 @@
 package io.bobba.poc.core.catalogue;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import io.bobba.poc.BobbaEnvironment;
 import io.bobba.poc.communication.outgoing.catalogue.CatalogueIndexComposer;
@@ -16,6 +22,9 @@ import io.bobba.poc.communication.outgoing.catalogue.CataloguePurchaseErrorCompo
 import io.bobba.poc.communication.outgoing.catalogue.CataloguePurchaseInformationComposer;
 import io.bobba.poc.core.items.BaseItem;
 import io.bobba.poc.core.users.User;
+import io.bobba.poc.misc.logging.LogLevel;
+import io.bobba.poc.misc.logging.Logging;
+import org.apache.commons.io.FileUtils;
 
 public class Catalogue {
 	private Map<Integer, CataloguePage> pages;
@@ -84,8 +93,46 @@ public class Catalogue {
 	}
 	}
 
+	private void downloadImagesFromDB(String url, String catalog) throws SQLException {
+		Set<String> imageNames = new HashSet<>();
+		try (Connection connection = BobbaEnvironment.getGame().getDatabase().getDataSource().getConnection();
+			 Statement statement = connection.createStatement()) {
+			if (statement.execute("SELECT * FROM catalog_pages")) {
+				try (ResultSet set = statement.getResultSet()) {
+					while (set.next()) {
+						int iconImage = set.getInt("icon_image");
+						imageNames.add("icon_" + iconImage + ".png");
+						String headline = set.getString("page_headline");
+						String teaser = set.getString("page_teaser");
+						imageNames.add(headline+ ".gif");
+						imageNames.add(teaser+ ".gif");
+					}
+				}
+			}
+		} catch(SQLException e) {
+			throw e;
+		}
+		imageNames.add("front_page_border.gif");
+		imageNames.forEach(imageName ->
+		{
+			String fullUrl = url + imageName;
+			try {
+				FileUtils.copyURLToFile(
+						new URL(fullUrl),
+						new File(catalog + imageName),
+						1000,
+						1000);
+			} catch (FileNotFoundException e) {
+				Logging.getInstance().writeLine("image not found: " + fullUrl, LogLevel.Verbose, this.getClass());
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		});
+	}
+
 	public void initialize() throws SQLException {
 		loadFromDb();
+		//downloadImagesFromDB("https://images.bobba.io/c_images/catalogue/", "target/images/");
 	}
 
 	public CataloguePage getPage(int pageId) {
