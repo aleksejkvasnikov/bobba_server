@@ -10,16 +10,14 @@ services:
     ports:
       - "3306:3306"
   fileserver:
-    image: halverneus/static-file-server:latest
+    image: nginx:latest
     ports:
-      - "8084:8080"
-    environment:
-      FOLDER: /content
+      - "8084:80"
     volumes:
-      - content:/content
+      - conf:/etc/nginx/
 
 volumes:
-  content:
+  conf:
     driver: local
     driver_opts:
       type: none
