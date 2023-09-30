@@ -1,0 +1,25 @@
+version: "3"
+
+services:
+  mariadb:
+    image: mariadb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: strongpassword
+      MYSQL_DATABASE: bobba
+    ports:
+      - "3306:3306"
+  fileserver:
+    image: nginx:latest
+    ports:
+      - "8084:80"
+    volumes:
+      - conf:/etc/nginx/
+
+volumes:
+  conf:
+    driver: local
+    driver_opts:
+      type: none
+      device: content
+      o: bind

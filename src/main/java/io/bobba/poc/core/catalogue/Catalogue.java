@@ -27,6 +27,10 @@ import io.bobba.poc.misc.logging.Logging;
 import org.apache.commons.io.FileUtils;
 
 public class Catalogue {
+	public static final String CATALOGUE_URL = "https://images.bobba.io/c_images/catalogue/";
+	public static final String TOP_STORY_URL = "https://images.bobba.io/c_images/Top_Story_Images/";
+	public static final String CONTENT_CATALOGUE = "content/catalogue/";
+	public static final String CONTENT_TOP_STORY = "content/top_story/";
 	private Map<Integer, CataloguePage> pages;
 	private static int itemIdGenerator = 0;
 
@@ -93,46 +97,63 @@ public class Catalogue {
 	}
 	}
 
-	private void downloadImagesFromDB(String url, String catalog) throws SQLException {
-		Set<String> imageNames = new HashSet<>();
+	private void downloadImagesFromDB() throws SQLException {
+		Set<String> catalogueImageNames = new HashSet<>();
+		Set<String> topStoryImageNames = new HashSet<>();
 		try (Connection connection = BobbaEnvironment.getGame().getDatabase().getDataSource().getConnection();
 			 Statement statement = connection.createStatement()) {
 			if (statement.execute("SELECT * FROM catalog_pages")) {
 				try (ResultSet set = statement.getResultSet()) {
 					while (set.next()) {
 						int iconImage = set.getInt("icon_image");
-						imageNames.add("icon_" + iconImage + ".png");
+						catalogueImageNames.add("icon_" + iconImage + ".png");
 						String headline = set.getString("page_headline");
 						String teaser = set.getString("page_teaser");
-						imageNames.add(headline+ ".gif");
-						imageNames.add(teaser+ ".gif");
+						catalogueImageNames.add(headline+ ".gif");
+						catalogueImageNames.add(teaser+ ".gif");
+						topStoryImageNames.add(teaser+ ".gif");
 					}
 				}
 			}
 		} catch(SQLException e) {
 			throw e;
 		}
-		imageNames.add("front_page_border.gif");
-		imageNames.forEach(imageName ->
+		catalogueImageNames.add("front_page_border.gif");
+		catalogueImageNames.forEach(imageName ->
 		{
-			String fullUrl = url + imageName;
+			String fullUrl = CATALOGUE_URL + imageName;
 			try {
 				FileUtils.copyURLToFile(
 						new URL(fullUrl),
-						new File(catalog + imageName),
+						new File(CONTENT_CATALOGUE + imageName),
 						1000,
 						1000);
 			} catch (FileNotFoundException e) {
 				Logging.getInstance().writeLine("image not found: " + fullUrl, LogLevel.Verbose, this.getClass());
 			} catch (IOException e) {
-				throw new RuntimeException(e);
+				Logging.getInstance().writeLine("exception: " + fullUrl, LogLevel.Verbose, this.getClass());
+			}
+		});
+		topStoryImageNames.forEach(imageName ->
+		{
+			String fullUrl = TOP_STORY_URL + imageName;
+			try {
+				FileUtils.copyURLToFile(
+						new URL(fullUrl),
+						new File(CONTENT_TOP_STORY + imageName),
+						1000,
+						1000);
+			} catch (FileNotFoundException e) {
+				Logging.getInstance().writeLine("image not found: " + fullUrl, LogLevel.Verbose, this.getClass());
+			} catch (IOException e) {
+				Logging.getInstance().writeLine("exception: " + fullUrl, LogLevel.Verbose, this.getClass());
 			}
 		});
 	}
 
 	public void initialize() throws SQLException {
 		loadFromDb();
-		//downloadImagesFromDB("https://images.bobba.io/c_images/catalogue/", "target/images/");
+		downloadImagesFromDB();
 	}
 
 	public CataloguePage getPage(int pageId) {
