@@ -1,5 +1,9 @@
 package io.bobba.poc.core;
 
+import java.io.BufferedWriter;
+import java.io.OutputStreamWriter;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -14,6 +18,13 @@ import io.bobba.poc.database.Database;
 import io.bobba.poc.misc.SSLHelper;
 import io.bobba.poc.misc.logging.Logging;
 import io.bobba.poc.net.ConnectionManager;
+import liquibase.Contexts;
+import liquibase.LabelExpression;
+import liquibase.Liquibase;
+import liquibase.database.DatabaseFactory;
+import liquibase.database.jvm.JdbcConnection;
+import liquibase.exception.LiquibaseException;
+import liquibase.resource.ClassLoaderResourceAccessor;
 
 public class Game {
 	private ConnectionManager connectionManager;
@@ -52,9 +63,22 @@ public class Game {
 		});
 		roomThread.start();
 
+		initializeLiquibase();
 		getItemManager().initialize();
 		getRoomManager().initialize();
 		getCatalogue().initialize();
+	}
+
+	private void initializeLiquibase() throws SQLException, LiquibaseException {
+		try (Connection connection = BobbaEnvironment.getGame().getDatabase().getDataSource().getConnection()) {
+
+			liquibase.database.Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
+
+			Liquibase liquibase = new liquibase.Liquibase("liquibase/master.xml", new ClassLoaderResourceAccessor(), database);
+			liquibase.update(new Contexts(), new LabelExpression());
+		} catch(SQLException e) {
+			throw e;
+		}
 	}
 
 	private void gameThread() {

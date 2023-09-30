@@ -1,5 +1,16 @@
 package io.bobba.poc.core.catalogue;
 
+import io.bobba.poc.BobbaEnvironment;
+import io.bobba.poc.communication.outgoing.catalogue.CatalogueIndexComposer;
+import io.bobba.poc.communication.outgoing.catalogue.CataloguePageComposer;
+import io.bobba.poc.communication.outgoing.catalogue.CataloguePurchaseErrorComposer;
+import io.bobba.poc.communication.outgoing.catalogue.CataloguePurchaseInformationComposer;
+import io.bobba.poc.core.items.BaseItem;
+import io.bobba.poc.core.users.User;
+import io.bobba.poc.misc.logging.LogLevel;
+import io.bobba.poc.misc.logging.Logging;
+import org.apache.commons.io.FileUtils;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -14,17 +25,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import io.bobba.poc.BobbaEnvironment;
-import io.bobba.poc.communication.outgoing.catalogue.CatalogueIndexComposer;
-import io.bobba.poc.communication.outgoing.catalogue.CataloguePageComposer;
-import io.bobba.poc.communication.outgoing.catalogue.CataloguePurchaseErrorComposer;
-import io.bobba.poc.communication.outgoing.catalogue.CataloguePurchaseInformationComposer;
-import io.bobba.poc.core.items.BaseItem;
-import io.bobba.poc.core.users.User;
-import io.bobba.poc.misc.logging.LogLevel;
-import io.bobba.poc.misc.logging.Logging;
-import org.apache.commons.io.FileUtils;
 
 public class Catalogue {
 	public static final String CATALOGUE_URL = "https://images.bobba.io/c_images/catalogue/";
@@ -153,7 +153,7 @@ public class Catalogue {
 
 	public void initialize() throws SQLException {
 		loadFromDb();
-		downloadImagesFromDB();
+		//downloadImagesFromDB();
 	}
 
 	public CataloguePage getPage(int pageId) {
